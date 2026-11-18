@@ -1,0 +1,90 @@
+# ==========================================
+# SupeRR Selector Season 2 - .gitignore
+# ==========================================
+
+# --- Raw Proprietary Data Pack ---
+# Raw competition data provided by Rajasthan Royals / tournament organizers
+6af458274c1e8_data_pack/
+__MACOSX/
+*.csv
+*.tsv
+*.xlsx
+*.parquet
+*.pdf
+data/raw/
+data/interim/
+
+# --- Python Environment & Caches ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environments
+.venv/
+venv/
+ENV/
+env/
+env.bak/
+venv.bak/
+
+# Testing & Coverage
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+
+# --- Environment Secrets & Credentials ---
+.env
+.env.*
+!.env.example
+secrets.json
+*.pem
+*.key
+*.cert
+credentials.ini
+
+# --- Operating System Artifacts ---
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# --- IDEs & Editors ---
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+
+# --- Logs & Scratch Dirs ---
+*.log
+logs/
+scratch/
+tmp/
+temp/
