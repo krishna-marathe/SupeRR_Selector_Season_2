@@ -1,0 +1,7 @@
+Scope,Count,Matches,Action,Reason
+Total Dataset Deliveries,200999,867,Catalog baseline,All recorded deliveries in ball_by_ball.csv
+Quarantined Reconciliation Fails,596,3,Quarantined from primary analysis,"Unresolved scorecard/DLS result text divergence (Matches 18532, 20190, 48610)"
+Rain-Interrupted Deliveries Excluded,3270,34,Excluded from 20-over pressure curves,Unverified mid-innings stoppage or target revision timing
+Super Over Deliveries Isolated,38,6,Isolated as distinct tie-breaker state,Innings 3 & 4 operate under non-standard 6-ball / 2-wicket limits
+Emerging / 'A' Team Competitions,6973,30,Preserved in supplementary analysis,Distinct player development context (Asia Cup Rising Stars / Emerging Cup)
+Primary Senior Analysis Sample,190316,812,Retained for Primary Ratings,Verified senior IPL and T20I matches with standard 20-over match states

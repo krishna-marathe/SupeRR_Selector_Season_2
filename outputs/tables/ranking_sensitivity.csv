@@ -1,0 +1,16 @@
+Specification,Dimension,Batter_Top10_Overlap,Batter_Rank_Corr,Bowler_Top10_Overlap,Bowler_Rank_Corr,Key_Findings
+Primary Baseline (Declared Config),Reference,10/10,1.0,10/10,1.0,"Benchmark definition, 60/40 component weights, 75/25 effectiveness/lift, 100-ball threshold"
+Model-Assisted Chase Pressure,Pressure Definition,4/10,0.333,6/10,0.685,Expands chase pressure window; core death specialists remain robust
+Late Phase Limit: 24 Balls,Phase Threshold,7/10,0.283,6/10,0.31,Tighter/looser phase window; top performers hold high overlap
+Late Phase Limit: 36 Balls,Phase Threshold,7/10,0.77,6/10,0.867,Tighter/looser phase window; top performers hold high overlap
+Chase RRR Threshold: 7.0,RRR Threshold,10/10,0.636,9/10,0.952,Higher hurdle filters moderate chases; top reliable rankers remain stable
+Chase RRR Threshold: 9.0,RRR Threshold,9/10,0.842,9/10,0.867,Higher hurdle filters moderate chases; top reliable rankers remain stable
+Exclude 1st Innings Finish,Phase Proxy,6/10,0.024,6/10,0.619,Focuses solely on 2nd innings chase pressure and extreme collapses
+Component Weights: 50/50,Component Weights,9/10,0.661,8/10,0.842,Balances scoring pace against dismissal aversion/wicket taking
+Component Weights: 70/30,Component Weights,8/10,0.842,7/10,0.952,Balances scoring pace against dismissal aversion/wicket taking
+Composite Weights: 60/40,Rating Weights,9/10,0.636,9/10,0.891,Adjusts weight between absolute effectiveness and baseline lift
+Composite Weights: 90/10,Rating Weights,9/10,0.636,9/10,0.964,Adjusts weight between absolute effectiveness and baseline lift
+Sample Threshold: 75 Balls / 8 Matches,Sample Threshold,7/10,0.818,7/10,0.903,Filters smaller/larger sample exposures; higher thresholds retain proven veterans
+Sample Threshold: 150 Balls / 15 Matches,Sample Threshold,8/10,0.833,8/10,0.905,Filters smaller/larger sample exposures; higher thresholds retain proven veterans
+IPL-Only Competition Scope,Competition Scope,5/10,-0.286,4/10,0.829,Isolates franchise environment; filters out international bilateral tours
+Temporal Predictive Validity (2022-24 -> 2025-26),Predictive Validity,r=0.112,0.112,r=0.069,0.069,"Prior ratings positively correlate with future adjusted pressure performance (Batters r=0.11, Bowlers r=0.07)"

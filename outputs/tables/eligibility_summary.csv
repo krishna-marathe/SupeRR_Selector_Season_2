@@ -1,0 +1,10 @@
+Pressure_Ball_Threshold,Pressure_Match_Threshold,Baseline_Ball_Threshold,Qualified_Batters,Qualified_Bowlers,Status
+75,8,75,105,152,Sufficient (>= 10 players)
+75,10,75,101,148,Sufficient (>= 10 players)
+75,15,75,83,111,Sufficient (>= 10 players)
+100,8,100,86,123,Sufficient (>= 10 players)
+100,10,100,86,123,Sufficient (>= 10 players)
+100,15,100,78,109,Sufficient (>= 10 players)
+150,8,150,61,85,Sufficient (>= 10 players)
+150,10,150,61,85,Sufficient (>= 10 players)
+150,15,150,60,85,Sufficient (>= 10 players)

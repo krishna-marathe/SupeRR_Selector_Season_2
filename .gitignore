@@ -13,6 +13,8 @@ __MACOSX/
 *.pdf
 data/raw/
 data/interim/
+!outputs/tables/*.csv
+!outputs/tables/**/*.csv
 
 # --- Python Environment & Caches ---
 __pycache__/
@@ -88,3 +90,5 @@ logs/
 scratch/
 tmp/
 temp/
+
+.vercel

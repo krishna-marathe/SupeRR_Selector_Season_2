@@ -1,0 +1,13 @@
+Target,Period,Model,Metric_1 (MAE),Metric_2 (RMSE),Metric_1 (Brier),Metric_2 (LogLoss)
+Batter Runs Faced,Val 2025,Context Group Baseline,1.3034,1.75,,
+Batter Runs Faced,Val 2025,Ridge Linear Model,1.3075,1.7442,,
+Batter Runs Faced,Val 2025,HistGradientBoosting,1.3033,1.7414,,
+Striker Dismissal Prob,Val 2025,Context Group Baseline,,,0.052,0.21157
+Striker Dismissal Prob,Val 2025,Logistic Regression,,,0.05198,0.2114
+Striker Dismissal Prob,Val 2025,HistGradientBoosting,,,0.05189,0.21065
+Bowler Conceded Runs,Val 2025,Context Group Baseline,1.2726,1.7254,,
+Bowler Conceded Runs,Val 2025,Ridge Linear Model,1.2772,1.7201,,
+Bowler Conceded Runs,Val 2025,HistGradientBoosting,1.2743,1.7168,,
+Bowler Credited Wicket Prob,Val 2025,Context Group Baseline,,,0.04897,0.20222
+Bowler Credited Wicket Prob,Val 2025,Logistic Regression,,,0.04895,0.202
+Bowler Credited Wicket Prob,Val 2025,HistGradientBoosting,,,0.04889,0.20149

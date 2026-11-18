@@ -1,0 +1,18 @@
+Dimension,Category,Total_Deliveries,Benchmark_Pressure_Deliveries,Benchmark_Pressure_Pct,Late_Chase_Balls,Resource_Pressure_Balls,Inn1_Finish_Balls,Model_Assisted_Balls
+Innings,Innings 1,100180,27028,26.98,0,2223,24937,0
+Innings,Innings 2,90136,16769,18.6,13256,3710,0,17363
+Phase,Death,42694,38202,89.48,13256,338,24936,5729
+Phase,Middle,87683,5582,6.37,0,5582,1,11634
+Phase,Powerplay,59939,13,0.02,0,13,0,0
+Competition,Bilateral Series (T20I),87183,20124,23.08,5624,3233,11445,7061
+Competition,IPL (Franchise),86688,19830,22.88,6493,2132,11327,8628
+Competition,International Tri-Series (T20I),7565,1788,23.64,530,266,1005,635
+Competition,Multi-Nation Tournament (T20I),8880,2055,23.14,609,302,1160,1039
+Season,2022,39097,9185,23.49,3191,979,5069,3999
+Season,2022/23,2659,593,22.3,169,73,355,122
+Season,2023,31509,7152,22.7,2276,751,4174,2713
+Season,2023/24,739,133,18.0,39,0,94,136
+Season,2024,40439,9471,23.42,2819,1442,5293,4034
+Season,2024/25,754,187,24.8,90,0,97,118
+Season,2025,43123,9915,22.99,2712,1616,5675,3828
+Season,2026,31996,7161,22.38,1960,1072,4180,2413
