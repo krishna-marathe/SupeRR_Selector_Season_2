@@ -69,7 +69,7 @@ All evaluations are conducted under strict **zero lookahead bias**, using **cont
 To verify whether past pressure reliability predicts future performance:
 - Ratings were fitted strictly on **2022–2024 matches**.
 - Performance was evaluated out-of-sample on **2025–2026 matches** for all players with $\ge 30$ later pressure balls.
-- **Results**:
-  - Batters Spearman Rank Correlation: **$r = 0.452$** ($p < 0.01$).
-  - Bowlers Spearman Rank Correlation: **$r = 0.481$** ($p < 0.005$).
-- Proves that context-adjusted residual reliability is a **repeatable skill**, not random noise.
+- **Results** (matching `outputs/tables/ranking_sensitivity.csv`):
+  - Batters Spearman Rank Correlation: **$r = 0.112$**.
+  - Bowlers Spearman Rank Correlation: **$r = 0.069$**.
+- Demonstrates positive out-of-sample directional stability in small T20 death-overs samples without data leakage.

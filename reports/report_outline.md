@@ -76,7 +76,7 @@ This outline structures the final executive presentation and technical dossier f
   - Effectiveness vs lift weights (60/40 vs 75/25 vs 90/10).
   - Sample qualification thresholds (75 vs 100 vs 150 balls).
   - IPL-only vs Combined Senior fixtures.
-- **6.4 Temporal Predictive Validity**: Out-of-sample correlation showing 2022-2024 ratings predict 2025-2026 performance ($r = 0.45$ to $0.48$).
+- **6.4 Temporal Predictive Validity**: Out-of-sample correlation showing 2022-2024 ratings predict 2025-2026 performance ($r = 0.112$ for batting, $r = 0.069$ for bowling).
 
 ---
 
