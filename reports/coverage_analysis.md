@@ -20,15 +20,21 @@ This report documents the geographical, seasonal, competitive, and player covera
 
 ---
 
-## 2. Match Format Breakdown
+## 2. Explicit Competition Categories & Coverage
 
-The dataset covers two distinct competitive formats:
+Competitions are explicitly classified into 5 distinct categories, ensuring domestic emerging tournaments are distinctly identified from senior international and franchise competitions:
 
-| Format Code | Competition Type | Matches Count | Match Share | Ball-By-Ball Deliveries |
-| :--- | :--- | :--- | :--- | :--- |
-| **T20I** | International T20 (Bilateral Series, Asia Cups, Tri-Series, Qualifiers) | 482 | 54.59% | 108,187 |
-| **T20** | Franchise / Domestic / Emerging (IPL 2022-2026, Emerging Teams Asia Cup) | 401 | 45.41% | 92,812 |
-| **Total** | | **883** | **100.0%** | **200,999** |
+| Category | Description | Competitions Count | Matches Count | Deliveries Count | Date Range |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **IPL (Franchise)** | Senior domestic franchise tournament (IPL seasons 2022 to 2026) | 5 | 371 | 88,811 | 2022-03-26 to 2026-05-31 |
+| **Emerging Teams (T20)** | Men's T20 Emerging Teams Asia Cup (2024) & Asia Cup Rising Stars (2025) | 2 | 30 | 4,001 | 2024-10-18 to 2025-11-23 |
+| **Bilateral Series (T20I)** | Official bilateral international tours between national teams | 123 | 411 | 91,446 | 2022-01-22 to 2026-11-01 |
+| **Multi-Nation Tournament (T20I)** | Senior Asia Cup (2022, 2025) and Asia Cup Qualifiers (2022) | 3 | 38 | 8,879 | 2022-08-20 to 2025-09-28 |
+| **International Tri-Series (T20I)** | Multi-team tri-nation international series (NZ, Netherlands, UAE, Pakistan) | 5 | 33 | 7,862 | 2022-10-07 to 2025-11-29 |
+| **Total** | | **138 with matches** | **883** | **200,999** | **2022-01-22 to 2026-11-01** |
+
+> [!IMPORTANT]
+> **Season Completeness Note**: Match and delivery counts alone do not imply calendar completeness of international T20 cricket. International bilateral series are scheduled asynchronously via the ICC Future Tours Programme (FTP). Furthermore, dates spanning 2025 and 2026 reflect tournament calendar schedules and projected records in the data pack. Emerging team tournaments involve 'A' teams and junior national prospects and must be analyzed with explicit category controls.
 
 ---
 

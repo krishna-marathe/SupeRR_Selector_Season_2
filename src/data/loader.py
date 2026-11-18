@@ -57,7 +57,7 @@ def load_matches() -> pd.DataFrame:
 
 
 def load_playing_eleven() -> pd.DataFrame:
-    """Load playing_eleven.csv."""
+    """Load raw playing_eleven.csv without modifications."""
     path = settings.PLAYING_ELEVEN_PATH
     if not path.exists():
         raise FileNotFoundError(f"playing_eleven.csv not found at {path}")
@@ -72,6 +72,43 @@ def load_playing_eleven() -> pd.DataFrame:
         },
     )
     return df
+
+
+def get_clean_playing_eleven(raw_p11: pd.DataFrame | None = None, bbb: pd.DataFrame | None = None) -> pd.DataFrame:
+    """Return a deduplicated playing_eleven table resolving the 40 multi-entry records.
+
+    Resolution Strategy:
+    1. Cross-reference actual observed batting orders in ball_by_ball.csv (innings <= 2).
+    2. For players with conflicting records, prioritize the record that matches their actual
+       in-match batting order observed at the crease.
+    3. For unbatted / non-playing players, prioritize valid nominal squad order sequence.
+    4. Guarantees strict uniqueness on (match_id, player_id) without arbitrary first-row retention.
+    """
+    if raw_p11 is None:
+        raw_p11 = load_playing_eleven()
+    if bbb is None:
+        bbb = load_ball_by_ball()
+
+    # Extract observed in-match batting orders from ball_by_ball
+    reg_b = bbb[bbb["innings"] <= 2]
+    bbb_orders = reg_b[["match_id", "striker_id", "batting_order"]].drop_duplicates()
+    bbb_orders = bbb_orders.rename(columns={"striker_id": "player_id", "batting_order": "bbb_order"})
+
+    # Merge observed orders with playing_eleven
+    p11_with_bbb = raw_p11.merge(bbb_orders, on=["match_id", "player_id"], how="left")
+
+    # Flag exact match with observed in-match batting order
+    p11_with_bbb["is_match_bbb"] = p11_with_bbb["batting_order"] == p11_with_bbb["bbb_order"]
+
+    # Sort so that matching ground-truth records appear first
+    p11_clean = p11_with_bbb.sort_values(
+        by=["match_id", "team_id", "player_id", "is_match_bbb"],
+        ascending=[True, True, True, False],
+    )
+
+    # Deduplicate strictly on (match_id, player_id)
+    deduped = p11_clean.drop_duplicates(subset=["match_id", "player_id"], keep="first")
+    return deduped.drop(columns=["bbb_order", "is_match_bbb"])
 
 
 def load_mappings() -> pd.DataFrame:

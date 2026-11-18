@@ -65,9 +65,12 @@ RR_supper_selector/
 | **Referential Integrity** | **Excellent (99.9%)** | 0 orphan competitions, 0 orphan teams, 0 orphan matches. |
 | **Automated Testing** | **5 / 5 Passed** | Automated test suite passes cleanly via `pytest`. |
 | **Duplicate Records** | **0 Full Duplicates** | 0 identical rows across all 6 CSV files. |
-| **Join Safety Flag** | **Requires Deduplication** | `playing_eleven.csv` contains 40 multi-entry rows in 3 matches. |
+| **Join Safety Flag** | **Resolved via Contextual Joins** | `playing_eleven` deduplicated on observed in-match batting orders; player mappings joined on `(comp_id, team_id, player_id)`. |
 | **Entity Resolution Flag** | **Strict ID Enforcement** | 7 player names map to two distinct players. Must use `player_id`. |
-| **Delivery Mechanics** | **Confirmed** | Total runs = `runs + extras1_runs + extras_2_runs`. 36 compound extras. |
+| **Delivery Mechanics** | **Verified & Reconstructed** | Total team runs = `runs + extras1_runs + extras_2_runs`. Compound extras (36 rows) decoupled from bowler-conceded runs. |
+| **Unresolved Batter Departures** | **Documented (12 Deliveries)** | 12 deliveries have `is_wicket == False` and `dismissal_type == NaN` with `dismissed_player_id` set. Treated as non-wickets. |
+| **Interrupted Chase Exclusions** | **844 Deliveries Excluded** | 11 rain-interrupted 2nd innings excluded from chase RRR modeling due to unverified mid-innings stoppage timing. |
+| **Super Overs Isolated** | **38 Deliveries Isolated** | 6 matches with innings 3 & 4 isolated as standalone tie-breaker states. |
 
 ---
 

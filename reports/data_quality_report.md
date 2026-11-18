@@ -68,11 +68,16 @@ This report presents an empirical, code-verified audit of the SupeRR Selector Se
 - **Risk**: A direct join `ball_by_ball.merge(playing_eleven, on=['match_id', 'player_id'])` will **duplicate delivery rows** for those matches.
 - **Remediation**: Downstream pipelines must deduplicate `playing_eleven` or aggregate by `(match_id, player_id)` before joining.
 
-### Anomaly 2: Retired Hurt vs Wicket Inconsistencies
-- **Observation**: In 12 deliveries, `is_wicket` is `False`, `dismissal_type` is `NaN`, but `dismissed_player_id` is populated.
-- **Root Cause**: Under MCC Cricket Law 25.4, a batter retiring hurt or retiring for illness is **not a wicket**; however, the player departs the field and is replaced by another batter. The dataset correctly marks `is_wicket = False` but logs the departing player in `dismissed_player_id`.
-- **Additional Finding**: In row 127899 (match 40709, Hardik Pandya), `dismissal_type` is `'Retire Out'`, but `dismissed_player_id` is `NaN`.
-- **Remediation**: For bowler evaluation, filter strictly on bowler wickets (`Caught`, `Bowled`, `LBW`, `Stump`, `Hit Wicket`). Do not treat retired hurt as wickets.
+### Anomaly 2: Unresolved Batter Departures / Non-Wicket Exits (12 Deliveries)
+- **Observation**: In 12 deliveries across 12 distinct matches, `is_wicket` is `False`, `dismissal_type` is `NaN`, but `dismissed_player_id` is populated with a valid player ID.
+- **Empirical Findings**:
+  - In all 12 cases, the departed batter never faced another ball in that innings.
+  - In 3 of the 12 cases (e.g. Bhanuka Rajapaksa, Krunal Pandya, Mohammad Rizwan), the player listed in `dismissed_player_id` was the **non-striker**, not the striker!
+  - `is_wicket` is strictly `False` in all 12 deliveries.
+- **Correction of Provisional Assumption**:
+  - Automatically labeling all 12 records as medically confirmed 'Retired Hurt' is an unsupported assumption. The source records indicate an exit without official dismissal (which can occur due to tactical retirement, injury, illness, or data collection protocol).
+  - **Analytical Consequence**: Because `is_wicket == False`, these deliveries are strictly **NOT team wickets** (the batting team's cumulative wickets fallen does NOT increment). No bowler is credited with a wicket. The departed batter's individual innings ends, and downstream batter metrics must treat this as a non-dismissed innings unless explicit evidence dictates otherwise.
+- **Additional Finding**: In row 127899 (match 40709, Hardik Pandya), `dismissal_type` is recorded as `'Retire Out'`, but `dismissed_player_id` is `NaN`. Here `is_wicket == True`, correctly registering as a team wicket lost, but the dismissed player ID must be resolved from `striker_id`.
 
 ### Anomaly 3: Extreme & Unrecorded Bowling Speeds (`bowl_speed`)
 - **Observation**:
