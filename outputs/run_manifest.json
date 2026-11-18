@@ -1,12 +1,12 @@
 {
-  "timestamp": "2026-11-18T23:10:15.927404",
-  "git_commit": "1da66b689ed22ef5388adf6f67ac28a837bae9e5",
+  "timestamp": "2026-11-18T23:11:22.526514",
+  "git_commit": "eb958d41e211d3be014317690f1c323b2e41ac41",
   "environment": {
-    "python_version": "3.11.0 (main, Oct 24 2022, 18:26:48) [MSC v.1933 64 bit (AMD64)]",
-    "pandas_version": "2.3.3",
-    "numpy_version": "2.3.4",
-    "sklearn_version": "1.7.2",
-    "matplotlib_version": "3.10.0"
+    "python_version": "3.13.0 (tags/v3.13.0:60403a5, Oct  7 2024, 09:38:07) [MSC v.1941 64 bit (AMD64)]",
+    "pandas_version": "3.0.2",
+    "numpy_version": "2.1.3",
+    "sklearn_version": "1.8.0",
+    "matplotlib_version": "3.9.2"
   },
   "raw_input_hashes": {
     "ball_by_ball.csv": "01e2b4379edfbab6a6e456d304cb3c70f554cb312ef93d9588f3f32a82cb396e",
