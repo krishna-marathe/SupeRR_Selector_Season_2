@@ -1,6 +1,6 @@
 # SupeRR Selector Season 2 - Coverage Analysis
 
-This report documents the geographical, seasonal, competitive, and player coverage of the supplied data pack.
+This report documents the geographical, seasonal, competitive, and player coverage of the supplied data pack, as well as the exact eligible sample sizes for pressure modeling.
 
 ---
 
@@ -8,15 +8,20 @@ This report documents the geographical, seasonal, competitive, and player covera
 
 | Metric | Metric Count | Notes |
 | :--- | :--- | :--- |
-| **Total Competitions** | 141 | 138 with scheduled matches; 3 scheduled future/unplayed series |
+| **Total Competitions in Catalog** | 141 | 138 with matches; 3 competitions have 0 fixtures in `matches.csv` |
 | **Total Matches** | 883 | 867 played with ball-by-ball records; 16 abandoned without play |
+| **Fully Eligible Matches** | 827 | Uninterrupted matches where all innings are fully verified |
+| **Partially Eligible Matches** | 17 | 11 interrupted chases (Innings 1 eligible); 6 Super Over matches (regular innings eligible) |
+| **Fully Excluded Matches** | 39 | 16 abandoned + 23 interrupted in both innings or abandoned mid-match |
 | **Total Deliveries** | 200,999 | Complete ball-by-ball records |
+| **Eligible Deliveries** | 197,691 | 98.35% of all deliveries (`is_valid_pressure_state == True`) |
+| **Excluded Deliveries** | 3,308 | 1.65% of deliveries (rain-interrupted innings and Super Overs) |
 | **Total Teams** | 38 | 10 IPL franchises, 12 Full Member nations, 11 Associate nations, 5 'A' sides |
 | **Total Players Mapped** | 1,217 | Master player registry in `competition_team_player_mapping.csv` |
 | **Players in Playing XIs** | 1,082 | Players named in matchday squads in `playing_eleven.csv` |
 | **Active Strikers** | 888 | Distinct batters who faced at least one delivery in `ball_by_ball.csv` |
 | **Active Bowlers** | 647 | Distinct bowlers who bowled at least one delivery in `ball_by_ball.csv` |
-| **Calendar Span** | 2022-01-22 to 2026-11-01 | Covers 4.8 calendar years (2022 through 2026) |
+| **Calendar Span** | 2022-01-22 to 2026-11-01 | Covers 4.8 calendar years (historical record as of current date 2026-11-18) |
 
 ---
 
@@ -34,13 +39,13 @@ Competitions are explicitly classified into 5 distinct categories, ensuring dome
 | **Total** | | **138 with matches** | **883** | **200,999** | **2022-01-22 to 2026-11-01** |
 
 > [!IMPORTANT]
-> **Season Completeness Note**: Match and delivery counts alone do not imply calendar completeness of international T20 cricket. International bilateral series are scheduled asynchronously via the ICC Future Tours Programme (FTP). Furthermore, dates spanning 2025 and 2026 reflect tournament calendar schedules and projected records in the data pack. Emerging team tournaments involve 'A' teams and junior national prospects and must be analyzed with explicit category controls.
+> **Season Completeness Note**: Match and delivery counts alone do not imply calendar completeness of international T20 cricket. International bilateral series are scheduled asynchronously via the ICC Future Tours Programme (FTP). Emerging team tournaments involve 'A' teams and junior national prospects and must be analyzed with explicit competition category controls to avoid confounding senior performance baselines.
 
 ---
 
 ## 3. Season & Format Distribution Matrix
 
-The dataset spans from 2022 to 2026, including complete data for recent and upcoming seasons:
+The dataset spans from 2022 to 2026:
 
 | Season | Domestic / Franchise T20 | International T20I | Total Matches | Matches with Ball-By-Ball | Abandoned Matches | Total Deliveries |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -59,7 +64,7 @@ The dataset spans from 2022 to 2026, including complete data for recent and upco
 ## 4. Key Competitions Coverage
 
 ### 4.1 Indian Premier League (IPL)
-Every IPL season from 2022 to 2026 is fully represented with full fixture lists and ball-by-ball delivery records:
+Every IPL season from 2022 to 2026 is represented with full fixture lists and ball-by-ball delivery records:
 - **IPL 2022**: 74 matches (2022-03-26 to 2022-05-29) - 17,988 balls
 - **IPL 2023**: 74 matches (2023-03-31 to 2023-05-29) - 17,863 balls
 - **IPL 2024**: 74 matches (2024-03-22 to 2024-05-26) - 17,211 balls (3 matches abandoned)
@@ -131,3 +136,29 @@ Matches were contested across 17 host nations and 98 distinct venues:
 - **Impact Players**:
   - 558 instances of Impact Players entering the game (`is_impact == 1`).
   - 558 instances of players being substituted off (`is_impact_off == 1`).
+
+---
+
+## 8. Sample Eligibility & Policy Reconciliation
+
+### 8.1 Reconciling the 856 Figure with Rigorous Target-Timing Standards
+In preliminary audits, a count of **856 eligible matches** was reported by assuming that any match with equal revised limits (e.g. 78 balls and 78 balls) had been reduced before play commenced.
+
+Detailed empirical inspection of ball-by-ball timestamps proved this assumption false: matches with equal limits frequently suffered prolonged mid-innings rain stoppages (e.g. Match 36098 had a 1h 13m rain stoppage during Innings 1; Match 50190 had a 1h 56m stoppage). Neither the batting team nor the bowling team knew the revised target or shortened delivery quota prior to the stoppage.
+
+Applying a strict cricket-semantics standard produces the following verified sample breakdown:
+- **Fully Eligible Matches**: **827 matches** (uninterrupted standard matches where every innings has fully verified limits, targets, and run rates).
+- **Partially Eligible Matches**: **17 matches**:
+  - *11 interrupted chases*: Innings 1 was completed normally (full 120 legal balls) and is fully retained. Innings 2 suffered rain interruptions and has unresolved target timing, so its chase states are excluded from RRR curves.
+  - *6 Super Over matches*: Innings 1 and Innings 2 are standard 20-over innings and are retained. Innings 3 and 4 are isolated tie-breaker states.
+- **Fully Excluded Matches**: **39 matches**:
+  - *16 abandoned matches* with 0 deliveries.
+  - *23 rain-shortened matches* where both innings were affected by mid-match curtailments or abandoned before completion.
+- **Matches with At Least One Eligible Innings**: $827 + 17 = \mathbf{844\text{ matches}}$.
+
+### 8.2 Delivery-Level Breakdown
+- **Eligible Deliveries**: **197,691 deliveries** (98.35% of all ball-by-ball records). All pre-delivery match states (`pre_score`, `pre_wickets`, `pre_legal_balls`, `pre_legal_balls_remaining`, `pre_runs_required`, `pre_rrr`, `pre_crr`, `phase`) are valid and verified.
+- **Excluded Deliveries**: **3,308 deliveries** (1.65%):
+  - *1,641 balls*: Interrupted chases with unverified target timing (`INTERRUPTED_TARGET_TIMING_UNRESOLVED`).
+  - *1,629 balls*: Interrupted first innings with unverified limit timing (`INTERRUPTED_FIRST_INNINGS_TIMING_UNRESOLVED`).
+  - *38 balls*: Super Over tie-breakers (`SUPER_OVER_SEPARATE_STATE`).

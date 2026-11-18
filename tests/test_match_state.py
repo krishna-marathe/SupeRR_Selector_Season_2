@@ -71,24 +71,30 @@ def test_super_overs_isolation(match_state_df):
 
 
 def test_target_revisions_known_vs_unknown_timing(match_state_df):
-    """Verify target handling: known pre-match shortened vs unknown mid-match timing."""
-    # Pre-match shortened: match 17395 (India vs SA, 8 overs = 48 balls per side)
+    """Verify target handling: do not assume equal revised limits occurred before play without evidence."""
+    # Match with revised overs/target: match 17395 (India vs SA)
     m17395 = match_state_df[match_state_df["match_id"] == 17395]
     inn2_17395 = m17395[m17395["innings"] == 2]
-    assert (inn2_17395["innings_legal_ball_limit"] == 48).all()
-    assert (inn2_17395["applicable_target"] == 91.0).all()
-    assert (~inn2_17395["is_target_timing_unresolved"]).all()
-    assert inn2_17395["is_valid_pressure_state"].all()
+    # Because source data does not record exact mid-match stoppage timing, target timing is unresolved
+    assert (~inn2_17395["is_target_valid"]).all()
+    assert inn2_17395["applicable_target"].isna().all()
+    assert inn2_17395["pre_rrr"].isna().all()
+    assert (inn2_17395["exclusion_reasons"] == "INTERRUPTED_TARGET_TIMING_UNRESOLVED").all()
+    assert (~inn2_17395["is_valid_pressure_state"]).all()
 
-    # Mid-match rain revised: match 21586 (CSK vs GT IPL 2023 Final)
-    m21586 = match_state_df[match_state_df["match_id"] == 21586]
-    inn2_21586 = m21586[m21586["innings"] == 2]
-    # Since revision timing is unknown mid-match, must be flagged unresolved and excluded
-    assert inn2_21586["is_target_timing_unresolved"].all()
-    assert (~inn2_21586["is_valid_pressure_state"]).all()
-    assert (inn2_21586["exclusion_reasons"] == "INTERRUPTED_TARGET_TIMING_UNRESOLVED").all()
-    assert inn2_21586["applicable_target"].isna().all()
-    assert inn2_21586["pre_rrr"].isna().all()
+    # Standard uninterrupted chase: match 13511 (West Indies vs England)
+    m13511 = match_state_df[match_state_df["match_id"] == 13511]
+    inn2_13511 = m13511[m13511["innings"] == 2]
+    assert inn2_13511["is_target_valid"].all()
+    assert (inn2_13511["applicable_target"] == 104.0).all()
+    assert inn2_13511["is_valid_pressure_state"].all()
+    assert (inn2_13511["exclusion_reasons"] == "NONE").all()
+
+
+def test_no_negative_remaining_balls_anomalies(match_state_df):
+    """Verify that unclipped remaining balls was never strictly negative across the dataset."""
+    assert (match_state_df["is_remaining_balls_anomaly"] == False).all()
+    assert (match_state_df["unclipped_remaining_balls"] >= 0).all()
 
 
 def test_playing_eleven_clean_resolution():

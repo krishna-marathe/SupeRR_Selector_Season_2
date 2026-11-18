@@ -3,12 +3,12 @@
 ## 1. Project Background & Objective
 The Rajasthan Royals SupeRR Selector Season 2 competition challenges participants to build a data-driven system that measures how batters and bowlers perform in high-pressure match situations compared with their baseline levels, identifying and ranking the **Top 10 most reliable batters** and **Top 10 most reliable bowlers** under pressure.
 
-This initial phase establishes the reproducible project repository, verifies environmental reproducibility, and delivers an exhaustive technical audit of the complete data pack.
+This report summarizes the data pack audit, cricket semantics verification, and validated match-state reconstruction pipeline.
 
 ---
 
 ## 2. Repository Architecture & Reproducibility Setup
-A modular, reproducible Python project structure has been created. All raw data files are preserved strictly in their original state.
+A modular, reproducible Python project structure has been established. All raw data files are preserved strictly in their original state.
 
 ```
 RR_supper_selector/
@@ -28,8 +28,12 @@ RR_supper_selector/
 │   ├── __init__.py
 │   ├── data/
 │   │   ├── __init__.py
-│   │   ├── loader.py         # Safe, type-annotated data loaders
+│   │   ├── loader.py         # Safe, type-annotated data loaders & clean playing_eleven resolver
 │   │   └── schema.py         # Table schemas and candidate key specs
+│   ├── state/
+│   │   ├── __init__.py
+│   │   ├── rules.py          # Exact cricket calculation rules (runs, balls, wickets, run rates)
+│   │   └── reconstructor.py  # Pre-delivery match state reconstruction pipeline
 │   ├── audit/
 │   │   ├── __init__.py
 │   │   ├── profiler.py       # Comprehensive profiling & anomaly engine
@@ -39,15 +43,22 @@ RR_supper_selector/
 │       └── logging_utils.py  # Centralized logger
 ├── reports/
 │   ├── audit_summary.md      # This document
+│   ├── cricket_calculation_rules.md # Mathematical definitions and domain laws
+│   ├── exclusion_register.md # Comprehensive audit of revised matches and exclusions
+│   ├── validation_and_reconciliation.md # Internal consistency checks, traces, SO comparison
 │   ├── data_dictionary.md    # Full column dictionary with confirmed vs assumed vs unresolved
 │   ├── data_quality_report.md# Deep dive on missingness, anomalies, and candidate keys
 │   ├── coverage_analysis.md  # Detailed coverage tables across formats, seasons, dates, and venues
 │   └── relationship_notes.md # Relational schema, ER diagram, and join hazards
 ├── tests/
 │   ├── __init__.py
-│   └── test_data_integrity.py# Pytest suite verifying integrity (100% passing)
+│   ├── test_cricket_rules.py # Tests covering scoring, extras, wickets, run rates, phases
+│   ├── test_data_integrity.py# Integrity, referential checks, uniqueness
+│   └── test_match_state.py   # State reconstruction, compound extras, Super Overs, P11 resolution
 ├── outputs/
-│   └── data_profile.json     # Machine-readable profiling results
+│   ├── match_states.parquet  # Reconstructed dataset (200,999 deliveries, 58 columns)
+│   ├── match_states_summary.csv # High-level summary of match states
+│   └── reconciliation_checks.csv # Row-by-row reconciliation across all 883 matches
 ├── .gitignore                # Robust rules for data packs, venvs, caches, secrets
 ├── .env.example              # Template environment configuration
 ├── requirements.txt          # Python dependencies
@@ -56,28 +67,31 @@ RR_supper_selector/
 
 ---
 
-## 3. Audit Scorecard & Key Findings
+## 3. Audit Scorecard & Reconciled Findings
 
 | Dimension | Audit Status | Key Metric / Detail |
 | :--- | :--- | :--- |
 | **Original File Preservation** | **100% Intact** | Zero files modified or overwritten in `6af458274c1e8_data_pack/`. |
 | **Data Completeness** | **High** | 883 matches across 141 competitions; 200,999 delivery-level records. |
-| **Referential Integrity** | **Excellent (99.9%)** | 0 orphan competitions, 0 orphan teams, 0 orphan matches. |
-| **Automated Testing** | **5 / 5 Passed** | Automated test suite passes cleanly via `pytest`. |
+| **Automated Testing** | **21 / 21 Passed** | Comprehensive test suites passing cleanly via `pytest` (`py -3.11 -m pytest tests/ -v`). |
+| **Referential Integrity** | **High (99.9%)** | 0 orphan competitions, 0 orphan teams, 0 orphan matches. |
 | **Duplicate Records** | **0 Full Duplicates** | 0 identical rows across all 6 CSV files. |
-| **Join Safety Flag** | **Resolved via Contextual Joins** | `playing_eleven` deduplicated on observed in-match batting orders; player mappings joined on `(comp_id, team_id, player_id)`. |
-| **Entity Resolution Flag** | **Strict ID Enforcement** | 7 player names map to two distinct players. Must use `player_id`. |
-| **Delivery Mechanics** | **Verified & Reconstructed** | Total team runs = `runs + extras1_runs + extras_2_runs`. Compound extras (36 rows) decoupled from bowler-conceded runs. |
-| **Unresolved Batter Departures** | **Documented (12 Deliveries)** | 12 deliveries have `is_wicket == False` and `dismissal_type == NaN` with `dismissed_player_id` set. Treated as non-wickets. |
-| **Interrupted Chase Exclusions** | **844 Deliveries Excluded** | 11 rain-interrupted 2nd innings excluded from chase RRR modeling due to unverified mid-innings stoppage timing. |
-| **Super Overs Isolated** | **38 Deliveries Isolated** | 6 matches with innings 3 & 4 isolated as standalone tie-breaker states. |
+| **Playing XI Resolution** | **Clean Ground-Truth Alignment** | 40 conflicting squad records resolved against in-match batting orders from `ball_by_ball.csv`. Retained all original files unchanged. |
+| **Entity Resolution** | **Strict ID Enforcement** | 7 player names map to multiple player IDs. Reconstructed dataset preserves both IDs and names (`player_id`, `team_id`, `match_id`, `comp_id`). |
+| **Delivery Mechanics** | **Verified & Reconstructed** | Total team runs = `runs + extras1_runs + extras_2_runs`. Compound extras (36 rows) correctly separated between bowler-conceded runs and fielding extras. |
+| **Unresolved Batter Departures** | **Documented (12 Deliveries)** | 12 deliveries have `is_wicket == False` and `dismissal_type == NaN` with `dismissed_player_id` set. Traced across innings: none returned. Classified as `UNRESOLVED_EXIT` (excluded from completed not-out baselines). |
+| **Dismissal Attribution** | **Striker Fallback Removed** | In row 127899 (Match 40709, Retire Out), `dismissed_player_id` is NaN. Striker fallback was removed to preserve raw ground truth (`delivery_dismissed_player_id == NaN`, `delivery_is_team_wicket == True`, `delivery_is_bowler_wicket == False`). |
+| **Revision Timing Standard** | **Rigorous Timing Rule** | Equal revised limits do not prove pre-match knowledge. 34 revised matches audited in [`reports/exclusion_register.md`](file:///c:/Users/marat/Downloads/3%20rd%20Year/RR_supper_selector/reports/exclusion_register.md). 1,641 chase balls and 1,629 first-innings balls flagged with unresolved timing. |
+| **Super Over Coverage** | **6 Recorded, 4 Missing** | 10 matches had tie-breaker results; only 6 have deliveries in `ball_by_ball.csv` (38 balls total). All 38 balls isolated under `is_super_over == True`. |
+| **Sample Eligibility** | **197,691 Eligible Balls** | 827 fully eligible matches, 17 partially eligible matches, 39 fully excluded matches. |
 
 ---
 
 ## 4. What the Dataset Supports
 1. **Granular Ball-by-Ball Match State Reconstruction**:
-   - Balls remaining, cumulative score, wickets fallen, and required run rate (RRR) can be reconstructed at each ball of the 2nd innings.
+   - Balls remaining, cumulative score, wickets fallen, and required run rate (RRR) reconstructed at each ball of the 2nd innings without lookahead bias.
    - Exact boundary and dot-ball counts per batter and bowler.
+   - Complete decoupling of legal deliveries from physical ball attempts.
 2. **Contextual Pressure Stratification**:
    - **Tournament Stakes**: `knock_out == 1` flags 31 high-stakes finals, semi-finals, eliminators, and qualifiers.
    - **Match Stage**: Clear distinction between `League`, `Super 4`, `Qualifier`, `Eliminator`, and `Final`.
@@ -100,22 +114,26 @@ RR_supper_selector/
 
 ---
 
-## 6. What Must Be Resolved Before Match-State Reconstruction
-Before computing cumulative match state and pressure metrics, the engineering pipeline must resolve the following six specifications:
+## 6. Readiness Assessment for Pressure Modelling
 
-1. **Legal Delivery vs Physical Ball Progression**:
-   - `over_ball_num` and `innings_ball_num` increment on illegal deliveries (`wide`, `Overstep`, `other`).
-   - The pipeline must compute cumulative **legal deliveries** (excluding wides and no-balls) to track exact balls remaining ($120 - \text{legal balls bowled}$).
-2. **Chase Target Determination**:
-   - In standard matches: $\text{Target} = \text{Innings 1 Total Runs} + 1$.
-   - In rain-shortened matches: $\text{Target} = \text{revised\_target}$ (from `matches.csv`), and maximum balls = $\text{second\_inn\_revised\_overs} \times 6$.
-3. **Treatment of Super Overs**:
-   - Deliveries where `innings \in \{3, 4\}` must be isolated and processed as distinct tie-breaker states rather than appended to innings 2.
-4. **Deduplication of Playing Eleven**:
-   - The 40 duplicate records in matches `13613`, `21176`, and `28962` in `playing_eleven.csv` must be deduplicated before joining to prevent delivery duplication.
-5. **Wicket Attribution Accounting**:
-   - Bowler wickets must strictly include `Caught`, `Bowled`, `LBW`, `Stump`, and `Hit Wicket`.
-   - `RunOut`, `Retire Out`, and `Obstructing the field` must be excluded from bowler wickets.
-   - The 12 `Retired Hurt` deliveries (`is_wicket == False`, `dismissal_type == NaN`, but `dismissed_player_id` populated) must not be counted as dismissals.
-6. **Minimum Sample Size and Eligibility Thresholds**:
-   - Criteria for minimum balls faced under pressure (batters) and minimum balls bowled under pressure (bowlers) must be formalized so small-sample flukes do not dominate rankings.
+The match-state dataset [`outputs/match_states.parquet`](file:///c:/Users/marat/Downloads/3%20rd%20Year/RR_supper_selector/outputs/match_states.parquet) is **READY FOR PRESSURE MODELLING**, subject to explicit sample boundaries:
+
+### Confirmed Fields Available for Modeling:
+- **Pre-delivery Match State**: `pre_score`, `pre_wickets`, `pre_legal_balls`, `pre_legal_balls_remaining`, `pre_crr`, `phase`.
+- **Chase Pressure State**: `pre_runs_required`, `pre_rrr` (strictly for deliveries where `is_valid_pressure_state == True` and `innings == 2`).
+- **Post-delivery Outcomes**: `delivery_runs`, `delivery_total_team_runs`, `delivery_bowler_runs_conceded`, `delivery_is_legal`, `delivery_is_batter_ball_faced`, `delivery_is_team_wicket`, `delivery_is_bowler_wicket`.
+- **Entity Context**: `match_id`, `comp_id`, `comp_name`, `batting_team_id`, `batting_team_name`, `bowling_team_id`, `bowling_team_name`, `striker_id`, `striker_name`, `non_striker_id`, `non_striker_name`, `bowler_id`, `bowler_name`, `knock_out`.
+
+### Unresolved Fields & Affected Records:
+1. **Target Timing in Interrupted Chases**: 1,641 deliveries in 23 rain-affected 2nd innings have `is_target_valid = False` and `pre_rrr = NaN` (`INTERRUPTED_TARGET_TIMING_UNRESOLVED`).
+2. **First-Innings Curtailment Timing**: 1,629 deliveries in 25 rain-affected 1st innings have `is_legal_balls_remaining_valid = False` (`INTERRUPTED_FIRST_INNINGS_TIMING_UNRESOLVED`).
+3. **Unresolved Batter Exits**: 12 records where batters departed without official dismissal. Excluded from completed not-out baselines (`UNRESOLVED_EXIT`).
+4. **Missing Dismissal Attribution**: 1 wicket in Match 40709 (`delivery_dismissed_player_id == NaN`). Preserved as team-wicket without attributing to striker.
+5. **Missing Tie-Breaker Deliveries**: 4 tie matches (13613, 18532, 21176, 28962) lack delivery logging for their Super Overs.
+
+### Exact Eligible Sample Counts:
+- **Eligible Deliveries**: **197,691 deliveries** (98.35% of total).
+- **Eligible Innings**: **1,664 innings** (96.52% of total).
+- **Fully Eligible Matches**: **827 matches** (93.66% of total).
+- **Partially Eligible Matches**: **17 matches** (11 with eligible Innings 1; 6 with eligible regular innings).
+- **Total Usable Matches**: **844 matches** containing at least one verified eligible innings.

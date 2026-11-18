@@ -3,6 +3,7 @@
 from __future__ import annotations
 from typing import Optional, Set
 import numpy as np
+import pandas as pd
 
 # Bowler-credited dismissal categories under ICC/MCC rules
 BOWLER_DISMISSAL_TYPES: Set[str] = {
@@ -40,23 +41,27 @@ def calculate_team_runs(runs: int, extras1: int, extras2: int) -> int:
 def calculate_bowler_runs_conceded(
     runs: int, extras1: int, extras2: int, extras_type: Optional[str]
 ) -> int:
-    """Calculate runs charged to the bowler's bowling figures.
+    """Calculate runs charged to the bowler's individual bowling analysis.
     
     Rules:
+    - Ordinary deliveries with missing/NaN extras_type: Bowler concedes bat runs + any extra1.
     - Batter runs off the bat ('runs') are always charged to the bowler.
-    - Wides: bowler is charged with all wide penalty and running runs in extras1.
+    - Wides: bowler is charged with wide penalty and running runs in extras1.
     - No-balls ('Overstep', 'other'): bowler is charged with the 1-run penalty in extras1.
       Any byes/leg-byes on a no-ball (recorded in extras_2_runs) are NOT charged to the bowler.
     - Byes, Leg Byes, and Penalty runs are NOT charged to the bowler.
     """
-    if extras_type == "wide":
+    if extras_type is None or pd.isna(extras_type) or str(extras_type).lower() in ("nan", "none", ""):
+        # Standard ordinary delivery without extras
         return int(runs + extras1)
-    elif extras_type in ("Overstep", "other"):
+
+    et = str(extras_type).strip()
+    if et in ("wide", "Overstep", "other"):
         return int(runs + extras1)
-    elif extras_type in ("byes", "legbyes", "Penalty"):
+    elif et in ("byes", "legbyes", "Penalty"):
         return int(runs)
     else:
-        # Regular delivery or anomaly where extras_type is NaN
+        # Fallback for any other recorded category
         return int(runs + extras1)
 
 
@@ -66,9 +71,9 @@ def is_legal_delivery(extras_type: Optional[str]) -> bool:
     Wides and No-balls (Overstep, other) are illegal deliveries and must be re-bowled.
     Byes, leg-byes, penalties, and standard deliveries are legal deliveries.
     """
-    if extras_type is None or str(extras_type).lower() == "nan":
+    if extras_type is None or pd.isna(extras_type) or str(extras_type).lower() in ("nan", "none", ""):
         return True
-    return extras_type not in ILLEGAL_EXTRAS_TYPES
+    return str(extras_type).strip() not in ILLEGAL_EXTRAS_TYPES
 
 
 def is_batter_ball_faced(extras_type: Optional[str]) -> bool:
@@ -79,9 +84,9 @@ def is_batter_ball_faced(extras_type: Optional[str]) -> bool:
     - No-balls DO count as a ball faced by the batter.
     - All legal deliveries (including byes, leg-byes, and dot balls) count as a ball faced.
     """
-    if extras_type is None or str(extras_type).lower() == "nan":
+    if extras_type is None or pd.isna(extras_type) or str(extras_type).lower() in ("nan", "none", ""):
         return True
-    return extras_type != "wide"
+    return str(extras_type).strip() != "wide"
 
 
 def is_team_wicket(is_wicket_flag: bool) -> bool:
@@ -95,9 +100,9 @@ def is_bowler_wicket(is_wicket_flag: bool, dismissal_type: Optional[str]) -> boo
     Credits bowler for Caught, Bowled, LBW, Stump, and Hit Wicket.
     Excludes Run Outs, Retire Outs, and Obstructing the field.
     """
-    if not is_wicket_flag or dismissal_type is None or str(dismissal_type).lower() == "nan":
+    if not is_wicket_flag or dismissal_type is None or pd.isna(dismissal_type) or str(dismissal_type).lower() in ("nan", "none", ""):
         return False
-    return dismissal_type in BOWLER_DISMISSAL_TYPES
+    return str(dismissal_type).strip() in BOWLER_DISMISSAL_TYPES
 
 
 def get_innings_phase(

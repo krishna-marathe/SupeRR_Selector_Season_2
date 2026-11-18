@@ -52,7 +52,7 @@ This report presents an empirical, code-verified audit of the SupeRR Selector Se
 | :--- | :--- | :--- | :--- |
 | `dismissal_type_id` | 190,118 | 94.59% | Null on all non-wicket deliveries (190,118 non-wicket deliveries). |
 | `dismissal_type` | 190,118 | 94.59% | Null on all non-wicket deliveries. Matches `is_wicket == False` exactly. |
-| `dismissed_player_id` | 190,107 | 94.58% | Null on non-dismissal balls, with 13 edge cases (12 retired hurts, 1 missing ID for Hardik Pandya). |
+| `dismissed_player_id` | 190,107 | 94.58% | Null on non-dismissal balls, with 13 edge cases (12 unexplained departures traced as UNRESOLVED_EXIT, 1 unpopulated ID on Retire Out wicket). |
 | `extras_type` | 189,167 | 94.11% | Null on all regular legal deliveries without extras (189,167 balls). |
 | `stroke` | 6,158 | 3.06% | Unclassified batting shot (balls left, padded away, or tracking missing). |
 | `over_or_around` | 407 | 0.20% | Bowler delivery side (Over/Around the wicket) missing in 407 deliveries. |

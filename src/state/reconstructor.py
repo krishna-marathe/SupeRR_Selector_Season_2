@@ -71,17 +71,14 @@ class MatchStateReconstructor:
         self.teams = teams if teams is not None else load_teams()
 
     def reconstruct(self) -> pd.DataFrame:
-        """Execute full match-state reconstruction.
-        
-        Returns:
-            pd.DataFrame: Augmented DataFrame of 200,999 rows with verified pre-delivery
-                          match state, delivery outcomes, and quality/exclusion flags.
-        """
+        """Execute full match-state reconstruction with field-level validity flags."""
         logger.info("Starting match-state reconstruction across 200,999 deliveries...")
 
         # 1. Prepare delivery-level outcome fields
         df = self.bbb.copy()
-        df = df.sort_values(by=["match_id", "innings", "overid", "over_ball_num", "innings_ball_num"]).reset_index(drop=True)
+        df = df.sort_values(
+            by=["match_id", "innings", "overid", "over_ball_num", "innings_ball_num"]
+        ).reset_index(drop=True)
 
         # Stable unique delivery key
         df["delivery_key"] = (
@@ -98,7 +95,9 @@ class MatchStateReconstructor:
         df["delivery_extras2"] = df["extras_2_runs"].astype(int)
 
         # Team runs on delivery: runs + extras1 + extras2
-        df["delivery_total_team_runs"] = df["delivery_runs"] + df["delivery_extras1"] + df["delivery_extras2"]
+        df["delivery_total_team_runs"] = (
+            df["delivery_runs"] + df["delivery_extras1"] + df["delivery_extras2"]
+        )
 
         # Legal delivery flag: False for wide, Overstep, other
         df["delivery_is_legal"] = ~df["extras_type"].isin(["wide", "Overstep", "other"])
@@ -113,17 +112,23 @@ class MatchStateReconstructor:
         bowler_types = {"Caught", "Bowled", "LBW", "Stump", "Hit Wicket"}
         df["delivery_is_bowler_wicket"] = df["delivery_is_team_wicket"] & df["dismissal_type"].isin(bowler_types)
         df["delivery_dismissal_type"] = df["dismissal_type"]
+
+        # Note: Do NOT automatically fall back to striker_id if dismissed_player_id is NaN!
+        # Preserve known raw attribution without inventing identities.
         df["delivery_dismissed_player_id"] = df["dismissed_player_id"]
 
-        # Bowler runs conceded
+        # Bowler runs conceded:
+        # Standard ordinary delivery without extras charges bat runs + any extra1
         is_wide = df["extras_type"] == "wide"
         is_noball = df["extras_type"].isin(["Overstep", "other"])
-        df["delivery_bowler_runs_conceded"] = df["delivery_runs"] + np.where(
-            is_wide | is_noball, df["delivery_extras1"], 0
+        is_field_extra = df["extras_type"].isin(["byes", "legbyes", "Penalty"])
+        df["delivery_bowler_runs_conceded"] = np.where(
+            is_field_extra,
+            df["delivery_runs"],
+            df["delivery_runs"] + df["delivery_extras1"],
         )
 
         # 2. Cumulative pre-delivery state within each (match_id, innings)
-        # Using groupby transform/cumsum and shifting by 1 to strictly exclude current ball
         grouped = df.groupby(["match_id", "innings"])
         df["pre_score"] = grouped["delivery_total_team_runs"].cumsum() - df["delivery_total_team_runs"]
         df["pre_legal_balls"] = grouped["delivery_is_legal"].cumsum() - df["delivery_is_legal"]
@@ -131,8 +136,9 @@ class MatchStateReconstructor:
 
         # Current Run Rate (CRR): pre_score / (pre_legal_balls / 6.0)
         # Safe undefined-value handling: NaN when pre_legal_balls == 0
+        df["is_crr_valid"] = df["pre_legal_balls"] > 0
         df["pre_crr"] = np.where(
-            df["pre_legal_balls"] > 0,
+            df["is_crr_valid"],
             np.round((df["pre_score"] / df["pre_legal_balls"]) * 6.0, 3),
             np.nan,
         )
@@ -181,84 +187,71 @@ class MatchStateReconstructor:
         # Standard: 120 balls (20 overs)
         # Super over: 6 balls
         # Shortened pre-match: revised overs (stored as balls, e.g. 48.0 = 48 balls = 8 overs)
-        is_pre_shortened = (
-            df["first_inn_revised_overs"].notna()
-            & df["second_inn_revised_overs"].notna()
-            & (df["first_inn_revised_overs"] == df["second_inn_revised_overs"])
-        )
+        has_revised_o1 = df["first_inn_revised_overs"].notna()
+        has_revised_o2 = df["second_inn_revised_overs"].notna()
+        has_revised_target = df["revised_target"].notna()
+
+        # Check for mid-innings rain stoppages:
+        # An innings has an unresolved limit timing if overs were revised but source metadata
+        # cannot verify that the reduction was established before ball 1 of that innings.
+        is_inn1_revised = has_revised_o1
+        is_inn2_revised = has_revised_o2 | has_revised_target
 
         limit_series = pd.Series(120, index=df.index, dtype=int)
-        # Super Overs: limit is 6 balls
         limit_series = np.where(df["is_super_over"], 6, limit_series)
-        # Pre-match shortened matches:
+        
+        # When first_inn_revised_overs is populated:
         first_rev_filled = df["first_inn_revised_overs"].fillna(120).astype(int)
         second_rev_filled = df["second_inn_revised_overs"].fillna(120).astype(int)
-        limit_series = np.where(
-            (~df["is_super_over"]) & is_pre_shortened & (df["innings"] == 1),
-            first_rev_filled,
-            limit_series,
-        )
-        limit_series = np.where(
-            (~df["is_super_over"]) & is_pre_shortened & (df["innings"] == 2),
-            second_rev_filled,
-            limit_series,
-        )
+        
+        limit_series = np.where((~df["is_super_over"]) & has_revised_o1 & (df["innings"] == 1), first_rev_filled, limit_series)
+        limit_series = np.where((~df["is_super_over"]) & has_revised_o2 & (df["innings"] == 2), second_rev_filled, limit_series)
         df["innings_legal_ball_limit"] = limit_series
 
-        # Legal balls remaining before delivery
-        df["pre_legal_balls_remaining"] = np.maximum(0, df["innings_legal_ball_limit"] - df["pre_legal_balls"])
+        # Unclipped legal balls remaining
+        df["unclipped_remaining_balls"] = df["innings_legal_ball_limit"] - df["pre_legal_balls"]
+        # Explicitly flag any negative remaining-ball anomaly before clipping
+        df["is_remaining_balls_anomaly"] = df["unclipped_remaining_balls"] < 0
+        df["pre_legal_balls_remaining"] = np.maximum(0, df["unclipped_remaining_balls"])
+
+        # Field-level validity flag: is_legal_balls_remaining_valid
+        # False if the innings had a rain interruption where stoppage timing is unknown
+        df["is_legal_balls_remaining_valid"] = (
+            (~df["is_super_over"])
+            & (~((df["innings"] == 2) & is_inn2_revised))
+            & (~((df["innings"] == 1) & is_inn1_revised))
+        ) | (df["is_super_over"])
 
         # 6. Target and Required Run Rate (RRR)
-        # Determine whether match has unresolved target timing (mid-innings rain revision)
-        has_revised_target = df["revised_target"].notna()
-        is_mid_match_revision = (
-            has_revised_target
-            & (
-                df["first_inn_revised_overs"].isna()
-                | (df["first_inn_revised_overs"] != df["second_inn_revised_overs"])
-            )
+        # For standard uninterrupted Innings 2: target is inn1_total + 1
+        # For Super Over Innings 4: target is inn3_total + 1
+        # For rain-affected chases: target timing is unresolved without ball-by-ball stoppage markers
+        df["is_target_valid"] = (
+            ((df["innings"] == 2) & (~is_inn2_revised) & df["inn1_total"].notna())
+            | ((df["innings"] == 4) & df["inn3_total"].notna())
         )
 
-        df["is_target_timing_unresolved"] = (df["innings"] == 2) & is_mid_match_revision
-
-        # Applicable chase target:
-        # For Innings 1: NaN (setting target)
-        # For Innings 3: NaN (Super Over 1 setting target)
-        # For Innings 4: inn3_total + 1 (Super Over chase)
-        # For Innings 2:
-        #   - Uninterrupted: inn1_total + 1
-        #   - Pre-match shortened: revised_target
-        #   - Mid-match revision: NaN (unresolved historical timing)
         target_series = pd.Series(np.nan, index=df.index, dtype=float)
-        # Uninterrupted innings 2
-        uninterrupted_inn2 = (df["innings"] == 2) & (~has_revised_target) & df["inn1_total"].notna()
-        target_series = np.where(uninterrupted_inn2, df["inn1_total"] + 1, target_series)
-        # Pre-match shortened innings 2
-        pre_shortened_inn2 = (df["innings"] == 2) & is_pre_shortened & has_revised_target
-        target_series = np.where(pre_shortened_inn2, df["revised_target"], target_series)
-        # Super Over chase (innings 4)
-        so_chase = (df["innings"] == 4) & df["inn3_total"].notna()
-        target_series = np.where(so_chase, df["inn3_total"] + 1, target_series)
-
+        target_series = np.where((df["innings"] == 2) & (~is_inn2_revised) & df["inn1_total"].notna(), df["inn1_total"] + 1, target_series)
+        target_series = np.where((df["innings"] == 4) & df["inn3_total"].notna(), df["inn3_total"] + 1, target_series)
         df["applicable_target"] = target_series
 
         # Runs required before delivery
-        has_target = df["applicable_target"].notna()
         df["pre_runs_required"] = np.where(
-            has_target,
+            df["is_target_valid"],
             np.maximum(0, df["applicable_target"] - df["pre_score"]),
             np.nan,
         )
 
-        # Required Run Rate (RRR):
-        # rrr = runs_required / (balls_remaining / 6.0)
-        # Safe handling: 0.0 when runs_required == 0; NaN when balls_remaining == 0 or target NaN
-        can_compute_rrr = (
-            has_target
+        # Field-level validity flag: is_rrr_valid
+        df["is_rrr_valid"] = (
+            df["is_target_valid"]
+            & df["is_legal_balls_remaining_valid"]
             & (df["pre_legal_balls_remaining"] > 0)
-            & (df["pre_runs_required"] > 0)
         )
-        target_reached = has_target & (df["pre_runs_required"] <= 0)
+
+        target_reached = df["is_target_valid"] & (df["pre_runs_required"] <= 0)
+        can_compute_rrr = df["is_rrr_valid"] & (df["pre_runs_required"] > 0)
 
         rrr_series = pd.Series(np.nan, index=df.index, dtype=float)
         rrr_series = np.where(target_reached, 0.0, rrr_series)
@@ -277,23 +270,29 @@ class MatchStateReconstructor:
             )
         ]
 
-        # 8. Reconstruction Quality Flags & Exclusion Register
-        # Identify reasons why a state cannot be used for pressure modeling
+        # 8. Detailed Quality Flags & Exclusion Register
+        # Identify specific exclusion reasons for each delivery
         exclusion_lists: List[str] = []
-        for is_so, timing_unres, inn in zip(
-            df["is_super_over"], df["is_target_timing_unresolved"], df["innings"]
+        for is_so, inn, inn1_rev, inn2_rev in zip(
+            df["is_super_over"], df["innings"], is_inn1_revised, is_inn2_revised
         ):
             reasons = []
             if is_so:
                 reasons.append("SUPER_OVER_SEPARATE_STATE")
-            if timing_unres:
+            if inn == 2 and inn2_rev:
                 reasons.append("INTERRUPTED_TARGET_TIMING_UNRESOLVED")
+            if inn == 1 and inn1_rev:
+                reasons.append("INTERRUPTED_FIRST_INNINGS_TIMING_UNRESOLVED")
             exclusion_lists.append(";".join(reasons) if reasons else "NONE")
 
         df["exclusion_reasons"] = exclusion_lists
+
+        # Eligible pressure state:
+        # Deliveries in standard 20-over uninterrupted innings (both inn 1 and inn 2)
         df["is_valid_pressure_state"] = (
-            (~df["is_target_timing_unresolved"])
-            & (~df["is_super_over"])
+            (~df["is_super_over"])
+            & (~((df["innings"] == 2) & is_inn2_revised))
+            & (~((df["innings"] == 1) & is_inn1_revised))
             & (df["innings"].isin([1, 2]))
         )
 
@@ -329,10 +328,16 @@ class MatchStateReconstructor:
             "pre_wickets",
             "pre_legal_balls",
             "innings_legal_ball_limit",
+            "unclipped_remaining_balls",
+            "is_remaining_balls_anomaly",
             "pre_legal_balls_remaining",
+            "is_legal_balls_remaining_valid",
             "applicable_target",
+            "is_target_valid",
             "pre_runs_required",
+            "is_crr_valid",
             "pre_crr",
+            "is_rrr_valid",
             "pre_rrr",
             "innings_phase",
             "delivery_runs",
@@ -349,7 +354,6 @@ class MatchStateReconstructor:
             "pace_or_spin",
             "stroke",
             "delivery_style",
-            "is_target_timing_unresolved",
             "is_valid_pressure_state",
             "exclusion_reasons",
         ]
@@ -369,7 +373,6 @@ class MatchStateReconstructor:
         logger.info(f"Saving match states to {parquet_path}...")
         df.to_parquet(parquet_path, index=False)
 
-        # Save a summary sample CSV for quick inspection
         logger.info(f"Saving sample summary to {csv_path}...")
         df.head(1000).to_csv(csv_path, index=False)
 

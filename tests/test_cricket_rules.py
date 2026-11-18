@@ -18,16 +18,21 @@ from src.state.rules import (
 
 
 def test_ordinary_scoring_delivery():
-    """Test standard off-the-bat scoring deliveries."""
-    # Dot ball
+    """Test standard off-the-bat scoring deliveries and missing extras_type handling."""
+    # Dot ball with None, NaN, and string 'nan'
     assert calculate_team_runs(0, 0, 0) == 0
     assert calculate_bowler_runs_conceded(0, 0, 0, None) == 0
+    assert calculate_bowler_runs_conceded(0, 0, 0, float("nan")) == 0
+    assert calculate_bowler_runs_conceded(0, 0, 0, "nan") == 0
     assert is_legal_delivery(None) is True
+    assert is_legal_delivery(float("nan")) is True
     assert is_batter_ball_faced(None) is True
+    assert is_batter_ball_faced(float("nan")) is True
 
     # Single
     assert calculate_team_runs(1, 0, 0) == 1
     assert calculate_bowler_runs_conceded(1, 0, 0, None) == 1
+    assert calculate_bowler_runs_conceded(1, 0, 0, float("nan")) == 1
 
     # Boundary four and six
     assert calculate_team_runs(4, 0, 0) == 4
