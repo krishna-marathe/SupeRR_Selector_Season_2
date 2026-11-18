@@ -1,0 +1,72 @@
+{
+  "timestamp": "2026-11-18T23:10:15.927404",
+  "git_commit": "1da66b689ed22ef5388adf6f67ac28a837bae9e5",
+  "environment": {
+    "python_version": "3.11.0 (main, Oct 24 2022, 18:26:48) [MSC v.1933 64 bit (AMD64)]",
+    "pandas_version": "2.3.3",
+    "numpy_version": "2.3.4",
+    "sklearn_version": "1.7.2",
+    "matplotlib_version": "3.10.0"
+  },
+  "raw_input_hashes": {
+    "ball_by_ball.csv": "01e2b4379edfbab6a6e456d304cb3c70f554cb312ef93d9588f3f32a82cb396e",
+    "matches.csv": "bb100ab84b8b9a15160c1f2315cf675210131a30e779ec5079fd5403dcf56eef",
+    "competitions.csv": "507ceb7189f972d4e4f299ddcfc97f3c3247af1913f6291106f161fa8353fd9b",
+    "competition_team_player_mapping.csv": "1ded4e42a933618572d6e2c3a521c3257eb1844fab4456d567d77cbb2d3bbb12",
+    "playing_eleven.csv": "7517c73722a28d5d61c808ccf0cbed315a8780586d02e946eb9a7f5daf011c27",
+    "teams.csv": "a65e5922a9b3bf49247b24fc9471782e700efb31f8dcc5042923238b87c50a5d"
+  },
+  "configuration": {
+    "quarantined_matches": [
+      18532,
+      20190,
+      48610
+    ],
+    "senior_competitions": [
+      "IPL (Franchise)",
+      "Bilateral Series (T20I)",
+      "Multi-Nation Tournament (T20I)",
+      "International Tri-Series (T20I)"
+    ],
+    "pressure_benchmark": {
+      "late_chase_max_balls": 30,
+      "late_chase_min_rrr": 8.0,
+      "resource_max_wickets_in_hand": 4,
+      "inn1_finish_max_balls": 30
+    },
+    "weights": {
+      "scoring_prevention": 0.6,
+      "survival_wickets": 0.4,
+      "pressure_effectiveness": 0.75,
+      "baseline_lift": 0.25
+    },
+    "bootstrap": {
+      "n_replicates": 500,
+      "confidence_level": 0.9,
+      "ranking_criterion": "conservative_lower_bound",
+      "random_seed": 42
+    }
+  },
+  "output_files": [
+    "outputs/tables/batting_rankings_all.csv",
+    "outputs/tables/bowling_rankings_all.csv",
+    "outputs/tables/top10_batters.csv",
+    "outputs/tables/top10_bowlers.csv",
+    "outputs/tables/player_match_evidence.csv",
+    "outputs/tables/pressure_coverage.csv",
+    "outputs/tables/eligibility_summary.csv",
+    "outputs/tables/model_comparison.csv",
+    "outputs/tables/temporal_validation.csv",
+    "outputs/tables/ranking_sensitivity.csv",
+    "outputs/tables/exclusions_summary.csv",
+    "outputs/player_recommendations.md",
+    "outputs/figures/chart1_data_coverage_and_exclusions.png",
+    "outputs/figures/chart2_pressure_coverage_by_phase.png",
+    "outputs/figures/chart3_top10_batters_uncertainty.png",
+    "outputs/figures/chart4_top10_bowlers_uncertainty.png",
+    "outputs/figures/chart5_effectiveness_vs_lift.png",
+    "outputs/figures/chart6_match_level_consistency.png",
+    "outputs/figures/chart7_ranking_sensitivity.png",
+    "outputs/figures/chart8_model_validation_and_calibration.png"
+  ]
+}
